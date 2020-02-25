@@ -88,9 +88,6 @@ if __name__ == "__main__":
         access_token_secret = apiKeys["api"]["access_token_secret"]
     )
 
-    # with open("timeLineSnapshot.json", mode="r") as inFile:
-    #     timeLine = json.load(inFile)
-
     timeLine = getTweets(twAPI, apiKeys["settings"]["screen_name"])
     with open(path.join(archPath, "timeLineSnapshot.json"), mode="w+") as outFile:
         outFile.write(json.dumps(timeLine, indent=2))
