@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     if doDelete:
         for delID in toDelete:
-            theTweet = timeLine[twID]
+            theTweet = timeLine[delID]
             createdAt = theTweet["created_at"]
             logger.info("Deleting tweet %s from %s" % (delID, createdAt))
             try:
