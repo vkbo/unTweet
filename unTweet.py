@@ -16,7 +16,6 @@ def getTweets(twAPI=None, screenName=None):
     of tweets, 3200. The function is slightly modified from the
     python-twitter example script.
     """
-
     timeLine = twAPI.GetUserTimeline(screen_name=screenName, count=200)
     oldestTweet = min(timeLine, key=lambda x: x.id).id
     logger.info("Retrieved tweets up to ID %d (%d tweets)" % (oldestTweet, len(timeLine)))
@@ -59,7 +58,25 @@ if __name__ == "__main__":
     with open(jsonFile, mode="r") as inFile:
         apiKeys = json.load(inFile)
 
-    archPath = path.abspath(apiKeys["settings"]["archive_path"])
+    try:
+        apiKey = apiKeys["api"]["api_key"]
+        apiSecretKey = apiKeys["api"]["api_secret_key"]
+        apiAccessToken = apiKeys["api"]["access_token"]
+        apiSecretAccessToken = apiKeys["api"]["access_token_secret"]
+    except Exception as e:
+        logger.error("Could not read API keys from settings.json")
+        logger.error(str(e))
+        sys.exit(1)
+
+    try:
+        screenName = apiKeys["settings"]["screen_name"]
+        archPath = path.abspath(apiKeys["settings"]["archive_path"])
+        maxAge = apiKeys["settings"]["max_age"]
+        minCount = apiKeys["settings"]["min_count"]
+    except Exception as e:
+        logger.error("Could not read user settings from settings.json")
+        logger.error(str(e))
+        sys.exit(1)
 
     # Set Up Logging
     logFmt = logging.Formatter(
@@ -82,25 +99,25 @@ if __name__ == "__main__":
     # Connect to API
     logger.info("Connecting to Twitter API")
     twAPI = twitter.Api(
-        consumer_key        = apiKeys["api"]["api_key"],
-        consumer_secret     = apiKeys["api"]["api_secret_key"],
-        access_token_key    = apiKeys["api"]["access_token"],
-        access_token_secret = apiKeys["api"]["access_token_secret"]
+        consumer_key = apiKey,
+        consumer_secret = apiSecretKey,
+        access_token_key = apiAccessToken,
+        access_token_secret = apiSecretAccessToken
     )
 
-    timeLine = getTweets(twAPI, apiKeys["settings"]["screen_name"])
+    timeLine = getTweets(twAPI, screenName)
     with open(path.join(archPath, "timeLineSnapshot.json"), mode="w+") as outFile:
         outFile.write(json.dumps(timeLine, indent=2))
 
     toDelete = []
-    for twID in timeLine:
+    for twNum, twID in enumerate(timeLine):
         theTweet = timeLine[twID]
         createdAt = theTweet["created_at"]
         timeStamp = datetime.strptime(createdAt, "%a %b %d %H:%M:%S %z %Y").replace(tzinfo=None)
         tweetAge = datetime.utcnow() - timeStamp
-        if tweetAge.days > apiKeys["settings"]["max_age"]:
+        if tweetAge.days > maxAge and twNum >= minCount:
             toDelete.append(twID)
-            logger.info("Will delete tweet %s from %s (%d days old)" % (twID, createdAt, tweetAge.days))
+            logger.info("Will delete tweet #%d (%s) from %s (%d days old)" % (twNum+1, twID, createdAt, tweetAge.days))
 
     logger.info("%d tweets scheduled for deletion" % len(toDelete))
     archFile = "archivedTweets_%s.json" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

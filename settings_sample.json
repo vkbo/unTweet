@@ -2,6 +2,7 @@
     "settings" : {
        "screen_name" : "",
        "max_age" : 365,
+       "min_count": 0,
        "archive_path" : ""
     },
     "api" : {
