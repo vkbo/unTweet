@@ -7,7 +7,7 @@ import twitter
 import logging
 
 from os import path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,9 @@ def getTweets(twAPI=None, screenName=None):
             break
         else:
             oldestTweet = newOldest
-            logger.info("Retrieved tweets up to ID %d (%d tweets)" % (oldestTweet, len(moreTweets)))
+            logger.info(
+                "Retrieved tweets up to ID %d (%d tweets)" % (oldestTweet, len(moreTweets))
+            )
             timeLine += moreTweets
 
     logger.info("Retrieved %d tweets from Twitter API" % len(timeLine))
@@ -84,15 +86,17 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
         style="{"
     )
-    fHandle = logging.FileHandler(path.join(archPath, "unTweet.log"))
-    fHandle.setLevel(logging.DEBUG)
-    fHandle.setFormatter(logFmt)
-    logger.addHandler(fHandle)
-
     cHandle = logging.StreamHandler()
     cHandle.setLevel(logging.DEBUG)
     cHandle.setFormatter(logFmt)
     logger.addHandler(cHandle)
+
+    if doDelete:
+        # Only write to log file when deleting
+        fHandle = logging.FileHandler(path.join(archPath, "unTweet.log"))
+        fHandle.setLevel(logging.DEBUG)
+        fHandle.setFormatter(logFmt)
+        logger.addHandler(fHandle)
 
     logger.setLevel(logging.DEBUG)
 
@@ -117,7 +121,11 @@ if __name__ == "__main__":
         tweetAge = datetime.utcnow() - timeStamp
         if tweetAge.days > maxAge and twNum >= minCount:
             toDelete.append(twID)
-            logger.info("Will delete tweet #%d (%s) from %s (%d days old)" % (twNum+1, twID, createdAt, tweetAge.days))
+            logger.info(
+                "Will delete tweet #%d (%s) from %s (%d days old)" % (
+                    twNum+1, twID, createdAt, tweetAge.days
+                )
+            )
 
     logger.info("%d tweets scheduled for deletion" % len(toDelete))
     archFile = "archivedTweets_%s.json" % datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
